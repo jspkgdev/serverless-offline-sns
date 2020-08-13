@@ -119,7 +119,7 @@ export class SNSAdapter implements ISNSAdapter {
             let event = req.body;
             if (req.is("text/plain") && req.get("x-amz-sns-rawdelivery") !== "true") {
                 const msg = event.MessageStructure === "json" ? JSON.parse(event.Message).default : event.Message;
-                event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", msg, event.MessageId || createMessageId(), event.MessageAttributes || {});
+                event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", msg, createMessageId(), event.MessageAttributes || {});
             }
 
             if (req.body.SubscribeURL) {
@@ -167,6 +167,35 @@ export class SNSAdapter implements ISNSAdapter {
                     this.debug(err, err.stack);
                 } else {
                     this.debug(`successfully subscribed fn "${fn.name}" to topic: "${arn}"`);
+                }
+                res();
+            });
+        });
+    }
+
+    public async subscribeQueue(queueUrl, arn, snsConfig) {
+        arn = this.convertPseudoParams(arn);
+        this.debug("subscribe: " + queueUrl + " " + arn);
+        const params = {
+            Protocol: "sqs",
+            TopicArn: arn,
+            Endpoint: queueUrl,
+            Attributes: {},
+        };
+
+        if (snsConfig.rawMessageDelivery === "true") {
+            params.Attributes["RawMessageDelivery"] = "true";
+        }
+        if (snsConfig.filterPolicy) {
+            params.Attributes["FilterPolicy"] = JSON.stringify(snsConfig.filterPolicy);
+        }
+
+        await new Promise(res => {
+            this.sns.subscribe(params, (err, data) => {
+                if (err) {
+                    this.debug(err, err.stack);
+                } else {
+                    this.debug(`successfully subscribed queue "${queueUrl}" to topic: "${arn}"`);
                 }
                 res();
             });
