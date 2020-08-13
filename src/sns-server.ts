@@ -271,19 +271,11 @@ export class SNSServer implements ISNSServer {
             }).promise();
         } else {
             const parsed = JSON.parse(event);
-            let message = JSON.parse(parsed.Message).default;
-            message = JSON.parse(message);
-            const records = [ {Sns: message } ];
-            
-            const messagePromises = records.map(record => {
-                return sqs
-                    .sendMessage({
-                        QueueUrl: sub.Endpoint,
-                        MessageBody: JSON.stringify(record.Sns),
-                    })
-                    .promise();
-            });
-            return Promise.all(messagePromises);
+            const message = JSON.parse(parsed.Message).default;
+            return sqs.sendMessage({
+                QueueUrl: sub.Endpoint,
+                MessageBody: message,
+            }).promise();
         }
     }
 
