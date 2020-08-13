@@ -270,10 +270,10 @@ export class SNSServer implements ISNSServer {
                 MessageBody: event,
             }).promise();
         } else {
-            let parsed = JSON.parse(event);
+            const parsed = JSON.parse(event);
             let message = JSON.parse(parsed.Message).default;
             message = JSON.parse(message);
-            let records = [ {Sns: message } ];
+            const records = [ {Sns: message } ];
             
             const messagePromises = records.map(record => {
                 return sqs
